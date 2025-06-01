@@ -1,1 +1,73 @@
-# Recharge-free
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera and Mic Recorder</title>
+</head>
+<body>
+  <h2>Record from Camera and Microphone</h2>
+  <video id="preview" width="320" height="240" autoplay></video>
+  <br>
+  <button id="startBtn">Start Recording</button>
+  <button id="stopBtn" disabled>Stop Recording</button>
+  <br><br>
+  <video id="recording" width="320" height="240" controls></video>
+  <br>
+  <a id="downloadLink" href="#" download="recording.webm">Download Recording</a>
+
+  <script>
+    let mediaStream;
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    const preview = document.getElementById('preview');
+    const recording = document.getElementById('recording');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const downloadLink = document.getElementById('downloadLink');
+
+    async function initMedia() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        preview.srcObject = mediaStream;
+      } catch (error) {
+        alert("Permission denied or error: " + error.message);
+        console.error(error);
+      }
+    }
+
+    startBtn.onclick = () => {
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(mediaStream);
+      
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        recording.src = url;
+        downloadLink.href = url;
+      };
+
+      mediaRecorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    };
+
+    stopBtn.onclick = () => {
+      mediaRecorder.stop();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    };
+
+    // Start media stream on page load
+    initMedia();
+  </script>
+</body>
+</html>
+
